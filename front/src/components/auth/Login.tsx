@@ -6,6 +6,7 @@ import { login } from '../../actions/auth';
 import dotenv from 'dotenv';
 import Kakao from '../KaKaoSignin';
 import Google from '../GoogleSignin';
+import Nav from '../Nav';
 
 dotenv.config();
 
@@ -20,8 +21,7 @@ const Login = ({ login, isAuthenticated }: any) => {
 			<p className='lead'>
 				<i className='fas fa-user'></i> Sign into Your Account
 			</p>
-			<Kakao />
-			<Google />
+      <Nav/>
 		</Fragment>
 	);
 };

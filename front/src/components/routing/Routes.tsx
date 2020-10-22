@@ -5,7 +5,6 @@ import Login from '../auth/Login';
 import Alert from '../layout/Alert';
 import Main from '../layout/Main';
 import NotFound from '../layout/NotFound';
-
 const Routes = () => {
 	return (
 		<section className='container'>

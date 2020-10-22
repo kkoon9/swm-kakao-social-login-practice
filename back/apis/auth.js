@@ -1,13 +1,12 @@
-const express = require("express");
-const router = express.Router();
-const AuthService = require("../services/AuthService");
-
 const express = require('express');
 const router = express.Router();
 const { check } = require("express-validator");
-
+const naver = require('../config/naverSecret');
+const axios = require("axios");
 const auth = require("../middlewares/auth");
-const User = require("../../models/User");
+const { User } = require("../models");
+const jwt = require('../module/jwt');
+const inMemoryDB = [];
 
 /**
  *  @route GET api/auth
@@ -24,78 +23,55 @@ router.get('/', auth, async function (req, res) {
   }
 });
 
-router.post('/',
-  async (req, res) => {
-    const { id, nickname, email, thumbnail_image_url } = req.body;
-    if (!id || !nickname || !email || !thumbnail_image_url) {
-      const missParameters = Object.entries({
-        id,
-      })
-        .filter(it => it[1] == undefined).map(it => it[0]).join(',');
-      res.status(200).send(utils.successFalse(sc.BAD_REQUEST, `${rm.NULL_VALUE}, ${missParameters}`));
-      return;
-    }
-    await AuthService.signup({
-      id, nickname, email, thumbnail_image_url
-    })
-      .then(({
-        json
-      }) => {
-        res.send(json)
-      }).catch(err => {
-        res.send(utils.successFalse(sc.INTERNAL_SERVER_ERROR, rm.INTERNAL_SERVER_ERROR));
-      })
-  })
 
+router.post('/tpken', async (req, res) => {
+
+  const { id, isPremium } = req.body;
+
+  try {
+    const token = await jwt.sign({ id, isPremium });
+    res.json(token);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
 
 /**
- *  @route Post api/auth
- *  @desc Authenticate user & get token
+ *  @route Post api/users
+ *  @desc Register User
  *  @access Public
  */
-router.post('/',
-  [
-    check('email', 'Please include a valid email').isEmail(),
-  ], async (req, res) => {
+router.get('/login', async (req, res) => {
+  const api_url = 'https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=' + naver.client_id + '&redirect_uri=' + naver.redirectURI + '&state=' + naver.state;
+  console.log(api_url);
+  res.set({ 'access-control-allow-origin': '*' });
+  res.redirect(api_url);
+});
 
-    const { email, password } = req.body;
 
-    try {
-      let user = await User.findOne({ email });
+router.get('/test', async (req, res) => {
+  res.json();
+});
 
-      if (!user) {
-        res.status(400).json({
-          errors: [{ msg: 'Invalid Credentials' }]
-        });
-      }
-      // Encrpyt password
-      const isMatch = await bcrypt.compare(password, user.password);
-      if (!isMatch) {
-        res.status(400).json({
-          errors: [{ msg: 'Invalid Credentials' }]
-        });
-      }
-      await user.save();
-
-      // Return jsonwebtoken
-      const payload = {
-        user: {
-          id: user.id
-        }
-      };
-      jwt.sign(
-        payload,
-        config.get('jwtSecretKey'),
-        { expiresIn: 36000, },
-        (err, token) => {
-          if (err) throw err;
-          res.json({ token });
-        }
-      );
-    } catch (err) {
-      console.error(err.message);
-      res.status(500).send('Server Error');
-    }
+/**
+ *  @route Post api/users
+ *  @desc Register User
+ *  @access Public
+ */
+router.get('/login/callback', async (req, res) => {
+  const access_token = req.headers.authorization;
+  const header = "Bearer " + access_token;
+  var api_url = 'https://openapi.naver.com/v1/nid/me';
+  var test = await axios({
+    url: api_url,
+    headers: { 'Authorization': header }
   });
+  const user_info = test.data.response;
+  const token = await jwt.sign(user_info);
+  console.log(user_info);
+  console.log(token);
+  res.json(token);
+});
 
 module.exports = router;

@@ -8,7 +8,7 @@ module.exports = {
       isPremium: user.isPremium,
     };
     const options = {
-      algorithm: "HS256", //H256(algorithm)에 해당하는 header, payload, signiture가 있음(내정)
+      algorithm: "HS256", // H256(algorithm)에 해당하는 header, payload, signiture가 있음(내정)
       expiresIn: "12h",
       issuer: "ConnectClass"
     };
