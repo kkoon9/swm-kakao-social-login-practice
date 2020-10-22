@@ -1,59 +1,77 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const AuthService = require("../services/AuthService");
-const rm = require('../module/util/responseMessage');
-const utils = require('../module/util/utils');
-const sc = require('../module/util/statusCode');
+const { check } = require("express-validator");
+const naver = require('../config/naverSecret');
+const axios = require("axios");
+const auth = require("../middlewares/auth");
+const { User } = require("../models");
+const jwt = require('../module/jwt');
+const inMemoryDB = [];
 
-router.get("/:id", async (req, res) => {
-  const { id } = req.params;
-  if (!id) {
-    const missParameters = Object.entries({
-      id
-    })
-      .filter(it => it[1] == undefined).map(it => it[0]).join(',');
-    res.status(200).send(utils.successFalse(sc.BAD_REQUEST, `${rm.NULL_VALUE}, ${missParameters}`));
-    return;
+/**
+ *  @route GET api/auth
+ *  @desc Test Route
+ *  @access Public
+ */
+router.get('/', auth, async function (req, res) {
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+    res.json(user);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Err');
   }
-  AuthService.read({
-    id
-  })
-    .then(({
-      json
-    }) =>
-      res.send(json)
-    ).catch(err => {
-      console.log(err);
-      res.send(utils.successFalse(sc.INTERNAL_SERVER_ERROR, rm.INTERNAL_SERVER_ERROR));
-    })
 });
 
-router.post('/',
-  async (req, res) => {
-    const { id, email, thumbnail_image_url, nickname } = req.body;
-    if (!id || !email || !thumbnail_image_url || !nickname) {
-      const missParameters = Object.entries({
-        id,
-        email,
-        thumbnail_image_url,
-        nickname
-      })
-        .filter(it => it[1] == undefined).map(it => it[0]).join(',');
-      res.status(200).send(utils.successFalse(sc.BAD_REQUEST, `${rm.NULL_VALUE}, ${missParameters}`));
-      return;
-    }
-    console.log({ id, email, thumbnail_image_url, nickname });
-    AuthService.signup({
-      id, email, thumbnail_image_url, nickname
-    })
-      .then(({
-        json
-      }) =>
-        res.send(json)
-      ).catch(err => {
-        res.send(utils.successFalse(sc.INTERNAL_SERVER_ERROR, rm.INTERNAL_SERVER_ERROR));
-      })
-  });
 
+router.post('/tpken', async (req, res) => {
+
+  const { id, isPremium } = req.body;
+
+  try {
+    const token = await jwt.sign({ id, isPremium });
+    res.json(token);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+/**
+ *  @route Post api/users
+ *  @desc Register User
+ *  @access Public
+ */
+router.get('/login', async (req, res) => {
+  const api_url = 'https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=' + naver.client_id + '&redirect_uri=' + naver.redirectURI + '&state=' + naver.state;
+  console.log(api_url);
+  res.set({ 'access-control-allow-origin': '*' });
+  res.redirect(api_url);
+});
+
+
+router.get('/test', async (req, res) => {
+  res.json();
+});
+
+/**
+ *  @route Post api/users
+ *  @desc Register User
+ *  @access Public
+ */
+router.get('/login/callback', async (req, res) => {
+  const access_token = req.headers.authorization;
+  const header = "Bearer " + access_token;
+  var api_url = 'https://openapi.naver.com/v1/nid/me';
+  var test = await axios({
+    url: api_url,
+    headers: { 'Authorization': header }
+  });
+  const user_info = test.data.response;
+  const token = await jwt.sign(user_info);
+  console.log(user_info);
+  console.log(token);
+  res.json(token);
+});
 
 module.exports = router;

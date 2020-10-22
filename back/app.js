@@ -7,15 +7,14 @@ const cors = require("cors");
 const { sequelize } = require('./models');
 sequelize.sync();
 const app = express();
-const api = require("./apis");
-
 app.use(logger('dev'));
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-app.use("/api", api);
+app.use("/", require("./apis/auth"));
+
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
   next(createError(404));
