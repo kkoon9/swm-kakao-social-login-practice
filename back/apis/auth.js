@@ -1,12 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { check } = require("express-validator");
 const naver = require('../config/naverSecret');
 const axios = require("axios");
 const auth = require("../middlewares/auth");
 const { User } = require("../models");
 const jwt = require('../module/jwt');
-const inMemoryDB = [];
 
 /**
  *  @route GET api/auth
@@ -24,10 +22,10 @@ router.get('/', auth, async function (req, res) {
 });
 
 
-router.post('/tpken', async (req, res) => {
+router.post('/token', async (req, res) => {
 
   const { id, isPremium } = req.body;
-
+  console.log("req.body : ", req.body);
   try {
     const token = await jwt.sign({ id, isPremium });
     res.json(token);
@@ -62,15 +60,14 @@ router.get('/test', async (req, res) => {
 router.get('/login/callback', async (req, res) => {
   const access_token = req.headers.authorization;
   const header = "Bearer " + access_token;
-  var api_url = 'https://openapi.naver.com/v1/nid/me';
-  var test = await axios({
+  const api_url = 'https://openapi.naver.com/v1/nid/me';
+  const test = await axios({
     url: api_url,
     headers: { 'Authorization': header }
   });
   const user_info = test.data.response;
   const token = await jwt.sign(user_info);
   console.log(user_info);
-  console.log(token);
   res.json(token);
 });
 
