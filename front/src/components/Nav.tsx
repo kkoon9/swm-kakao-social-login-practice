@@ -2,7 +2,8 @@ import React, { useEffect, useState, Fragment } from 'react';
 import { RouteComponentProps, withRouter } from 'react-router-dom';
 import styled, { css } from 'styled-components';
 import axios from 'axios';
-// import Login from 'Utils/Login';
+import dotenv from 'dotenv';
+dotenv.config();
 
 declare global {
   interface Window {
@@ -38,8 +39,9 @@ const Nav: React.FC<RouteComponentProps> = () => {
   }
   function Naver() {
     //리팩토링 예정
+    console.log("test : " , process.env.REACT_APP_NAVER_APP_KEY)
     const naverLogin = new naver.LoginWithNaverId({
-      clientId: 'N9Gy04TXlaiclb4Om9D3',
+      clientId: process.env.REACT_APP_NAVER_APP_KEY,
       callbackUrl: 'http://127.0.0.1:3000/login/',
       callbackHandle: true,
       loginButton: {
@@ -54,8 +56,8 @@ const Nav: React.FC<RouteComponentProps> = () => {
       naverLogin.getLoginStatus(function(status: string) {
           /* 필수적으로 받아야하는 프로필 정보가 있다면 callback처리 시점에 체크 */
 
-          var name = naverLogin.user.getName();
-          var profileImage = naverLogin.user.getProfileImage();
+          const name = naverLogin.user.getName();
+          const profileImage = naverLogin.user.getProfileImage();
           console.log(name, profileImage);
           if (name === undefined || name === null) {
             alert('닉네임은 필수정보입니다. 정보제공을 동의해주세요.');
@@ -91,7 +93,7 @@ const Nav: React.FC<RouteComponentProps> = () => {
           Authorization: loca,
         }
       }
-      const token = await axios.get('http://localhost:8080/login/callback', config);
+      const token = await axios.get('http://localhost:5500/login/callback', config);
       localStorage.setItem('token', token.data.token);
     }
   }
@@ -118,6 +120,5 @@ const NaverLogin = styled.div`
   width: 30px;
   height: 30px;
   vertical-align: middle;
-  float: right;
   margin-right: 10px;
 `;
