@@ -13,7 +13,8 @@ dotenv.config();
 const Login = ({ login, isAuthenticated }: any) => {
 	// Redirect if logged in
 	if (localStorage.token) {
-		return <Redirect to='/' />;
+    console.log("Login Page");
+		return <Redirect to='/main' />;
 	}
 	return (
 		<Fragment>
@@ -21,6 +22,7 @@ const Login = ({ login, isAuthenticated }: any) => {
 			<p className='lead'>
 				<i className='fas fa-user'></i> Sign into Your Account
 			</p>
+      <Kakao />
       <Nav/>
 		</Fragment>
 	);

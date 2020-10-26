@@ -1,14 +1,19 @@
 import React, { Fragment } from 'react';
-import { Redirect } from 'react-router-dom';
+import { Redirect, useHistory } from 'react-router-dom';
 import styled from 'styled-components';
 import KaKaoLogin from 'react-kakao-login';
 import axios from 'axios';
 import dotenv from 'dotenv';
-
 dotenv.config();
-
 const KaKaoSignin = () => {
+  const history = useHistory();
+  if (localStorage.token) {
+    return <Redirect to='/login' />;
+  }
 	const responseKaKao = async (res: any) => {
+    if (localStorage.token) {
+      return <Redirect to='/login' />;
+    }
 		const config = {
 			headers: {
 				'Content-Type': 'application/json',
@@ -26,18 +31,10 @@ const KaKaoSignin = () => {
 		const user = await axios.get(`http://db.api.connectclass.io/user/${userId}`);
 		const isUser: string = JSON.stringify(user.data.success);
 		if (isUser === 'true') {
-			const token = await axios.post('http://localhost:8080/token', JSON.stringify(user), config);
+			const token = await axios.post('http://localhost:5500/token', JSON.stringify(user.data.data), config);
 			localStorage.setItem('token', token.data.token);
 			if (localStorage.token) {
-				console.log(localStorage.token);
-				console.log('Main으로 가라고 로그인 끝났으면');
-				return (
-					<Redirect
-						to={{
-							pathname: '/',
-						}}
-					/>
-				);
+        history.goBack();
 			}
 		} else {
 			try {
@@ -45,8 +42,10 @@ const KaKaoSignin = () => {
 				const res = await axios.post('http://db.api.connectclass.io/user', body, config);
 				const msg: string = JSON.stringify(res.data.success);
 				if (msg === 'true') {
-					const token = await axios.post('http://localhost:8080/token', body, config);
-					localStorage.setItem('token', token.data.token);
+					const token = await axios.post('http://localhost:5500/token', body, config);
+          localStorage.setItem('token', token.data.token);
+          history.goBack();
+          return <Redirect to='/main' />;
 				} else {
 					alert('DB 오류입니다.');
 				}
@@ -60,7 +59,8 @@ const KaKaoSignin = () => {
 	};
 	// Redirect if logged in
 	if (localStorage.token) {
-		return <Redirect to='/' />;
+    console.log("제발 메인으로 가즈아!");
+		return <Redirect to='/main' />;
 	}
 
 	return (
